@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text Summarizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f06, #ffba00);
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            background: -webkit-linear-gradient(left, #ff007f, #ffba00); /* For WebKit browsers */
+            background: linear-gradient(to right, #ff007f, #ffba00); /* Standard property */
+            -webkit-background-clip: text; /* WebKit-specific */
+            background-clip: text; /* Standard property */
+            -webkit-text-fill-color: transparent; /* WebKit-specific for transparent text */
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: #ff007f;
+            font-size: 1.5rem;
+            margin: 20px 0 10px;
+        }
+
+        textarea, input[type="file"] {
+            width: 100%;
+            margin: 10px 0;
+            padding: 15px;
+            border: 2px solid #ff007f;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            outline: none;
+        }
+
+        textarea {
+            height: 150px;
+        }
+
+        button {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #ff007f, #ffba00);
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #ffba00, #ff007f);
+        }
+
+        #summary-result {
+            background-color: #f9f9f9;
+            border: 2px solid #ffba00;
+            height: 150px;
+        }
+
+        footer {
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 1rem;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>AI Text Summarizer</h1>
+
+        <h3>Upload a File</h3>
+        <input type="file" id="file-input">
+
+        <h3>Or Enter Text Manually</h3>
+        <textarea id="document-text" placeholder="Type or paste your text here..."></textarea>
+
+        <button id="summarize-btn">Summarize</button>
+
+        <h3>Summary</h3>
+        <textarea id="summary-result" readonly></textarea>
+
+        <div id="error-message" class="error-message"></div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 AI Text Summarizer. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.getElementById('summarize-btn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('file-input');
+            const textArea = document.getElementById('document-text');
+            const errorMessage = document.getElementById('error-message');
+            let text = textArea.value.trim();
+            errorMessage.textContent = ""; // Clear any previous error message
+
+            // Check if file is selected or text is entered
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/summarize-file', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Error in file summarization: ' + response.statusText);
+                    }
+
+                    const data = await response.json();
+                    if (data.summary) {
+                        document.getElementById('summary-result').value = data.summary;
+                    } else {
+                        throw new Error('No summary returned from server.');
+                    }
+                } catch (error) {
+                    errorMessage.textContent = error.message;
+                }
+
+            } else if (text) {
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/summarize', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ text: text })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Error in text summarization: ' + response.statusText);
+                    }
+
+                    const data = await response.json();
+                    if (data.summary) {
+                        document.getElementById('summary-result').value = data.summary;
+                    } else {
+                        throw new Error('No summary returned from server.');
+                    }
+                } catch (error) {
+                    errorMessage.textContent = error.message;
+                }
+
+            } else {
+                errorMessage.textContent = "Please upload a file or enter text to summarize.";
+            }
+        });
+    </script>
+
+</body>
+</html>
